@@ -1,6 +1,38 @@
-* {
-	width: 100vw;
-	height: 100vh;
-	margin: 0;
-	padding: 0;
+body {
+	width: 100%;
+	height: 100%;
+	text-align: center;
+	font-family: orbitron;
+	font-weight: 700;
+	font-size: 3.5vh;
+	color: #d5d5d5;
+}
+
+/*Needs to be here, otherwise a scrollbar will appear*/
+.row {
+	width: 100%;
+}
+
+/*The div the healthBar is in*/
+#healthBarWrapper {
+	width: 100%;
+	height: 6vh;
+	margin: 2vh auto;
+	padding: 5px 5px;
+	background: #222222;
+}
+
+#healthBar{
+	width: 100%;
+	height: 100%;
+	background: #666666;
+
+}
+
+#healthBarWrapper p {
+	position: absolute;
+	margin: 0 auto;
+	left: 0;
+	right: 0;
+	top: 25%;
 }

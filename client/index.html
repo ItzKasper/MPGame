@@ -1,18 +1,71 @@
 <!DOCTYPE html>
 <html>
 <head>
+	<link href="https://fonts.googleapis.com/css?family=Orbitron:400,700" rel="stylesheet">
+	<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<link rel="stylesheet" type="text/css" href="/client/style.css">
 	<title></title>
 </head>
 <body>
 
-<canvas id="ctx" width="800" height="800" style="border:1px solid #000000;"></canvas>
+<div class="row">
+	<!--Maybe for a timer or something -->
+	<div class="col-sm-1">
+	</div>
+
+	<div class="col-sm-10">
+		<div id="healthBarWrapper">
+			<div id="healthBar"></div>
+			<p id="healthText">100%</p>
+		</div>
+	</div>
+
+	<div class="col-sm-1">
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-sm-1">
+	</div>
+
+	<div class="col-sm-10">
+		<p id="task">Task 1</p>
+	</div>
+
+	<div class="col-sm-1">
+	</div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
 <script type="text/javascript">
-		var ctx = document.getElementById("ctx").getContext("2d");
-		ctx.height = window.innerHeight;
-		ctx.width = window.innerWidth;
-		ctx.font = '30px Arial';
+	
+	var socket = io();
+
+	socket.on('newPlayerData', function(data){
+		updateHealthBar(data.health);
+	})
+
+	socket.on('newTask', function(data){
+		updateTask(data.displayName);
+	})
+
+	function updateHealthBar(newHealth){
+		document.getElementById("healthBar").style.width= newHealth + "%";
+		document.getElementById("healthText").innerHTML = newHealth + "%";
+	}
+
+	function updateTask(newTask){
+		document.getElementById("task").innerHTML = newTask;
+	}
+</script>
+
+<!--<canvas id="ctx"></canvas>-->
+
+<!--<script type="text/javascript">
+	var ctx = document.getElementById("ctx").getContext("2d");
+	document.getElementById("ctx").height = window.innerHeight;
+	document.getElementById("ctx").width = window.innerWidth;
+	ctx.font = '30px Arial';
 
 	var socket = io();
 
@@ -25,6 +78,7 @@
 		ctx.lineWidth="4";
 		ctx.strokeStyle="black";
 		ctx.rect(20, 18, 760, 104);	//Added two to the Y because of the 4px border
+		ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);	//Added two to the Y because of the 4px border
 		ctx.stroke();
 
 		//Health bar
@@ -51,7 +105,7 @@ function healthToWidth(health){
 	totalWidth = 760 / 100 * health;
 	return totalWidth;
 }
-</script>
+</script>-->
 
 </body>
 </html>

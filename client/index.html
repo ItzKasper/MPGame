@@ -8,6 +8,8 @@
 </head>
 <body>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
+
 <div class="row">
 	<!--Maybe for a timer or something -->
 	<div class="col-sm-1">
@@ -36,23 +38,68 @@
 	</div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
-<script type="text/javascript">
-	
-	var socket = io();
+<div class="row">
+	<div class="col-sm-4 boardElement" id="element1">
+	</div>
+	<div class="col-sm-4 boardElement" id="element2">
+	</div>
+	<div class="col-sm-4 boardElement" id="element3">
+	</div>
+	<div class="col-sm-4 boardElement" id="element4">
+	</div>
+	<div class="col-sm-4 boardElement" id="element5">
+	</div>
+	<div class="col-sm-4 boardElement" id="element6">
+	</div>
+	<div class="col-sm-4 boardElement" id="element7">
+	</div>
+	<div class="col-sm-4 boardElement" id="element8">
+	</div>
+	<div class="col-sm-4 boardElement" id="element9">
+	</div>
+	<script type="text/javascript">
 
+		var socket = io();
+
+		socket.on('newBoard', function(data){
+			console.log(data.length);
+			for(var i = 1;i < data.length;i++){
+				console.log(data[i]);
+				console.log(data[i].optionCount);
+				if(data[i].elementType === "toggleSwitch"){
+					document.getElementById("element" + i).innerHTML = '<div><p>Lorem Ipsum</p><img src="/client/img/toggleSwitchOff.png" class="img-responsive toggleSwitchImg"></div>';
+				}else if(data[i].elementType === "button"){
+					document.getElementById("element" + i).innerHTML = '<div><p>Lorem Ipsum</p><img src="/client/img/button.png" class="img-responsive buttonImg"></div>';
+				}else if(data[i].elementType === "slider"){
+					var inputMarkers = null;
+					for(var j = 0;j < data[i].optionCount;j++){
+						if(inputMarkers == null){
+							inputMarkers = "<td>" + j + "</td>"
+						}else{
+							inputMarkers = inputMarkers + "<td>" + j + "</td>";
+						}
+					}
+					console.log(inputMarkers);
+					document.getElementById("element" + i).innerHTML = '<div><p>Lorem Ipsum</p><input type="range" min="0" max="' + (data[i].optionCount - 1) + '" value="0" step="1"/><table class="markers"><tr>' + inputMarkers + '</tr></table></div>';
+				}
+			}
+		});
+	</script>
+</div>
+<script type="text/javascript">
 	socket.on('newPlayerData', function(data){
 		updateHealthBar(data.health);
-	})
-
-	socket.on('newTask', function(data){
-		updateTask(data.displayName);
-	})
+	});
 
 	function updateHealthBar(newHealth){
 		document.getElementById("healthBar").style.width= newHealth + "%";
 		document.getElementById("healthText").innerHTML = newHealth + "%";
 	}
+
+
+	socket.on('newTask', function(data){
+		updateTask(data.displayName);
+	});
 
 	function updateTask(newTask){
 		document.getElementById("task").innerHTML = newTask;

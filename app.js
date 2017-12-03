@@ -40,6 +40,7 @@ Player.onConnect = function(socket){
 	var player = Player(socket.id);
 	console.log("A Player With Id: " + socket.id + " Has Connected");
 
+	Player.generateBoard(socket);
 	Task(socket.id);
 }
 
@@ -61,13 +62,63 @@ Player.updateHealth = function(id){
 	return Player.list[id].health;
 }
 
+Player.generateBoard = function(socket){
+	var boardData = [socket.id];
+
+	var newElementType;
+	var newOptionCount;
+	for(i=1;i<10;i++){
+
+		//Determines which type it is going to use
+		switch(Math.floor(3 * Math.random())){
+			case 0:
+				newElementType = "button"; break;
+			case 1:
+				newElementType = "toggleSwitch"; break;
+			case 2:
+				newElementType = "slider"; break;
+			default:
+				newElementType = "button";
+		}
+
+		//Select the option count
+		if(newElementType === "button"){
+			newOptionCount = 1;
+		}else if(newElementType === "toggleSwitch"){
+			newOptionCount = 2;
+		}else if(newElementType === "slider"){
+			switch(Math.floor(3 * Math.random())){
+				case 0:
+					newOptionCount = 3; break;
+				case 1:
+					newOptionCount = 4; break;
+				case 2:
+					newOptionCount = 6; break;
+				default:
+					newOptionCount = 4;
+			}
+		}
+
+		var elementData = {
+			displayName: "Lorem Ipsum",
+			elementType: newElementType,
+			optionCount: newOptionCount
+		}
+
+		boardData[i] = elementData;
+
+	}
+
+	socket.emit('newBoard', boardData);
+}
+
 
 
 /* TASK TASK TASK TASK */
 var Task = function(id){
 	var self = Task.generate(id);
 
-	console.log(self);
+	//console.log(self);
 	Player.list[id].health = 100;
 	var socket = SOCKET_LIST[id];
 	socket.emit('newTask', self);
@@ -102,6 +153,9 @@ Task.generate = function(id){
 			break;
 		case 5:
 			newDisplayName = "HOI DIT IS EEN TASK 5";
+			break;
+		case 6:
+			newDisplayName = "HOI DIT IS EEN TASK 6";
 			break;
 	}
 

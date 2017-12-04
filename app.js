@@ -52,15 +52,16 @@ Player.onDisconnect = function(socket){
 	console.log(socket.id);
 
 	//Remove all the elements from the allElements array so no new tasks will be generated for that element and it can be created again
-	Player.cleanupArray(socket.id);
+	Player.cleanupArray(socket.id, allElements);
+	Player.cleanupArray(socket.id, elementStatus);
 }
 
-Player.cleanupArray = function(id){
+Player.cleanupArray = function(playerId, array){
 	//cycles through all the elements until it reaches one where the disconnected id matches with the element id, then it removes that and it start again until there isn't any left
-	for(var i = 0;i < allElements.length;i++){
-		if(allElements[i].playerId === id){
-			allElements.splice(i, 1);
-			Player.cleanupArray(id);
+	for(var i = 0;i < array.length;i++){
+		if(array[i].playerId === playerId){
+			array.splice(i, 1);
+			Player.cleanupArray(playerId, array);
 		}
 	}
 }
@@ -82,7 +83,6 @@ var allElements = [];
 var elementStatus = [];
 
 Player.generateBoard = function(socket){
-	var nameOptions = ["Kwadraat<wbr>lek", "Systeem<wbr>bord", "Ontladings<wbr>schakelaar", "Javaanse <wbr>Wafel", "Birk", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18"];
 	var elementOptions = ["button", "toggleSwitch", "slider"];
 	var optionOptions = [3, 4, 6];
 
@@ -90,10 +90,14 @@ Player.generateBoard = function(socket){
 
 	var newElementType;
 	var newOptionCount;
+	var newName;
+	var newId;
 	var newDisplayName;
 	for(i=1;i<10;i++){
 
-		newDisplayName = Player.generateDisplayName();
+		newName = Player.generateDisplayName();
+		newDisplayName = newName.displayName;
+		newId = newName.id;
 		//Determines which type it is going to use
 		newElementType = elementOptions[Math.floor(3 * Math.random())];
 
@@ -109,12 +113,15 @@ Player.generateBoard = function(socket){
 		var elementData = {
 			playerId: socket.id,
 			displayName: newDisplayName,
+			id: newId,
 			elementType: newElementType,
 			optionCount: newOptionCount,
 		}
 
 		var statusData = {
+			playerId: socket.id,
 			displayName: newDisplayName,
+			id: newId,
 			optionCount: newOptionCount,
 			currentOption: 0, 
 		}
@@ -126,17 +133,65 @@ Player.generateBoard = function(socket){
 	}
 	//console.log(allElements);
 	socket.emit('newBoard', boardData);
+
+	socket.on('newToggleSwitchOption', function(switchId){
+		for(var i = 0;i < elementStatus.length;i++){
+			if(elementStatus[i].id === switchId){
+				if(elementStatus[i].currentOption){
+					elementStatus[i].currentOption = 0;
+				}else if(!elementStatus[i].currentOption){
+					elementStatus[i].currentOption = 1;
+				}
+			}
+		}
+	});
+
+	socket.on('buttonPress', function(switchId){
+		for(var i =0;i < elementStatus.length;i++){
+			if(elementStatus[i].id === switchId){
+				elementStatus[i].currenOption = 1;
+				//Task.check();
+				elementStatus[i].currenOption = 0;
+			}
+		}
+	});
 }
 
 Player.generateDisplayName = function(){
 
-	var nameOptions = ["Kwadraat<wbr>lek", "Systeem<wbr>bord", "Ontladings<wbr>schakelaar", "Javaanse <wbr>Wafel", "Birk", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18"];
+	var nameOptions = [
+	{displayName: "Kwadraat<wbr>lek", id: "kwadraatlek"},
+	{displayName: "Systeem<wbr>bord", id: "systeembord"},
+	{displayName: "Ontladings<wbr>schakelaar", id: "ontladingsschakelaar"},
+	{displayName: "Javaanse <wbr>Wafel", id: "javaanse_wafel"},
+	{displayName: "Birk", id: "birk"},
+	{displayName: "Kalibrator", id: "kalibrator"},
+	{displayName: "Mogge", id: "mogge"},
+	{displayName: "Boermsa", id: "boersma"},
+	{displayName: "Bril", id: "bril"},
+	{displayName: "Banaan", id: "banaan"},
+	{displayName: "Capacitor", id: "capacitor"},
+	{displayName: "Geleiding", id: "geleiding"},
+	{displayName: "Airco", id: "airco"},
+	{displayName: "9", id: "9"},
+	{displayName: "10", id: "10"},
+	{displayName: "11", id: "11"},
+	{displayName: "12", id: "12"},
+	{displayName: "13", id: "13"},
+	{displayName: "14", id: "14"},
+	{displayName: "15", id: "15"},
+	{displayName: "16", id: "16"},
+	{displayName: "17", id: "17"},
+	{displayName: "18", id: "18"},
+	];
 	var newDisplayName;
 
 	while(true){
 
 		var isDuplicate = false;
-		newDisplayName = nameOptions[Math.floor(nameOptions.length * Math.random())];
+		newNameOption = nameOptions[Math.floor(nameOptions.length * Math.random())];
+		newDisplayName = newNameOption.displayName;
+		newId = newNameOption.id;
 
 		for(var j = 0;j < allElements.length;j++){
 			if(newDisplayName === allElements[j].displayName){
@@ -146,7 +201,13 @@ Player.generateDisplayName = function(){
 		}
 
 		if(!isDuplicate){
-			return newDisplayName;
+			var self = {
+				displayName: newDisplayName,
+				id: newId,
+			}
+
+			return self;
+
 		}
 
 	}
@@ -236,6 +297,14 @@ io.sockets.on('connection', function(socket){
 		Player.onDisconnect(socket);
 	});
 
+	socket.on('requestCurrentOption', function(switchId){
+		for(var i = 0;i < elementStatus.length;i++){
+			if(elementStatus[i].id === switchId){
+				socket.emit('requestReply', elementStatus[i].currentOption);
+				break;
+			}
+		}
+	});
 });
 
 setInterval(function(){
@@ -260,11 +329,16 @@ setInterval(function(){
 	}*/
 },1000/25);
 
+//Temporary because it keeps getting stuck in an infinite loop
 function generateRandomNumberWithException(max, exception){
-	var rNumber = Math.floor(max * Math.random());
-	if(rNumber === exception){
-		generateRandomNumberWithException(max, exception);
-	}else{
-		return rNumber;
-	}
+	var isDuplicate = true;
+
+	//while(true)
+		var rNumber = Math.floor(max * Math.random());
+		//if(rNumber !== exception){
+			//isDuplicate = false;
+			return rNumber;
+		//}else{
+		//	isDuplicate = true;
+		//}
 }

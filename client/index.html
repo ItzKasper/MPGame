@@ -67,9 +67,9 @@
 				console.log(data[i]);
 				console.log(data[i].optionCount);
 				if(data[i].elementType === "toggleSwitch"){
-					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><img src="/client/img/toggleSwitchOff.png" class="img-responsive toggleSwitchImg"></div>';
+					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><img src="/client/img/toggleSwitchOff.png" class="img-responsive toggleSwitchImg" onclick=\'toggleSwitchPress("' + data[i].id + '", this.id);\' id="toggleSwitch' + data[i].id + 'Img"/></div>';
 				}else if(data[i].elementType === "button"){
-					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><img src="/client/img/button.png" class="img-responsive buttonImg"></div>';
+					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><img src="/client/img/button.png" class="img-responsive buttonImg" onclick=\'buttonPress("' + data[i].id + '");\'></div>';
 				}else if(data[i].elementType === "slider"){
 					var inputMarkers = null;
 					for(var j = 0;j < data[i].optionCount;j++){
@@ -79,7 +79,7 @@
 							inputMarkers = inputMarkers + "<td>" + j + "</td>";
 						}
 					}
-					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><input type="range" min="0" max="' + (data[i].optionCount - 1) + '" value="0" step="1"/><table class="markers"><tr>' + inputMarkers + '</tr></table></div>';
+					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><input type="range" min="0" max="' + (data[i].optionCount - 1) + '" value="0" step="1" onInput=\'switchChange("' + data[i].id + '",this.value);\'/><table class="markers"><tr>' + inputMarkers + '</tr></table></div>';
 				}
 			}
 		});
@@ -103,55 +103,35 @@
 	function updateTask(newTask){
 		document.getElementById("task").innerHTML = newTask;
 	}
+
+	function switchChange(switchId, newOption){
+		var self = {
+			id: switchId,
+			option: newOption,
+		}
+		console.log("Switch " + switchId + " changed to " + newOption);
+		socket.emit('switchChange', self);
+	}
+
+	function toggleSwitchPress(switchId, functionCaller){
+		console.log("Press");
+		socket.emit('newToggleSwitchOption', switchId);
+		socket.emit('requestCurrentOption', switchId);
+		socket.once('requestReply', function(currentOption){
+			//console.log(currentOption);
+			if(currentOption === 0){
+				document.getElementById(functionCaller).src = "/client/img/toggleSwitchOff.png";
+			}else if(currentOption === 1){
+				document.getElementById(functionCaller).src = "/client/img/toggleSwitchOn.png";
+			}
+		});
+	}
+
+	function buttonPress(switchId){
+		console.log("Buttonpress");
+		socket.once('buttonPress', switchId);
+	}
 </script>
-
-<!--<canvas id="ctx"></canvas>-->
-
-<!--<script type="text/javascript">
-	var ctx = document.getElementById("ctx").getContext("2d");
-	document.getElementById("ctx").height = window.innerHeight;
-	document.getElementById("ctx").width = window.innerWidth;
-	ctx.font = '30px Arial';
-
-	var socket = io();
-
-	//Get the new position
-	socket.on('newPlayerData',function(data){
-		ctx.clearRect(20,18,760,104);
-
-		//Draw a rectangle for the health bar
-		ctx.beginPath();
-		ctx.lineWidth="4";
-		ctx.strokeStyle="black";
-		ctx.rect(20, 18, 760, 104);	//Added two to the Y because of the 4px border
-		ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);	//Added two to the Y because of the 4px border
-		ctx.stroke();
-
-		//Health bar
-		ctx.beginPath();
-		var healthBar_gradient=ctx.createLinearGradient(0,0,600,0);
-		healthBar_gradient.addColorStop(0,"red");
-		healthBar_gradient.addColorStop(1,"green");
-		ctx.fillStyle=healthBar_gradient;
-		ctx.fillRect(20, 20, healthToWidth(data.health), 100);
-		ctx.stroke();
-
-		ctx.strokeStyle="black";
-		ctx.fillText(data.health, 100, 100);
-	});
-
-	socket.on('newTask',function(data){
-		ctx.clearRect(0, 400, 800, 800);
-		ctx.fillStyle = "black";
-		ctx.fillText(data.displayName, 50, 600);
-		console.log(data.displayName);
-	});
-
-function healthToWidth(health){
-	totalWidth = 760 / 100 * health;
-	return totalWidth;
-}
-</script>-->
 
 </body>
 </html>

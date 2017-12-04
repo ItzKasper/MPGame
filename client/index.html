@@ -67,9 +67,9 @@
 				console.log(data[i]);
 				console.log(data[i].optionCount);
 				if(data[i].elementType === "toggleSwitch"){
-					document.getElementById("element" + i).innerHTML = '<div><p>Lorem Ipsum</p><img src="/client/img/toggleSwitchOff.png" class="img-responsive toggleSwitchImg"></div>';
+					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><img src="/client/img/toggleSwitchOff.png" class="img-responsive toggleSwitchImg"></div>';
 				}else if(data[i].elementType === "button"){
-					document.getElementById("element" + i).innerHTML = '<div><p>Lorem Ipsum</p><img src="/client/img/button.png" class="img-responsive buttonImg"></div>';
+					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><img src="/client/img/button.png" class="img-responsive buttonImg"></div>';
 				}else if(data[i].elementType === "slider"){
 					var inputMarkers = null;
 					for(var j = 0;j < data[i].optionCount;j++){
@@ -79,8 +79,7 @@
 							inputMarkers = inputMarkers + "<td>" + j + "</td>";
 						}
 					}
-					console.log(inputMarkers);
-					document.getElementById("element" + i).innerHTML = '<div><p>Lorem Ipsum</p><input type="range" min="0" max="' + (data[i].optionCount - 1) + '" value="0" step="1"/><table class="markers"><tr>' + inputMarkers + '</tr></table></div>';
+					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><input type="range" min="0" max="' + (data[i].optionCount - 1) + '" value="0" step="1"/><table class="markers"><tr>' + inputMarkers + '</tr></table></div>';
 				}
 			}
 		});
@@ -98,7 +97,7 @@
 
 
 	socket.on('newTask', function(data){
-		updateTask(data.displayName);
+		updateTask(data.displayMessage);
 	});
 
 	function updateTask(newTask){

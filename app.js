@@ -11,7 +11,7 @@ app.get('/',function(req, res) {
 app.use('/client',express.static(__dirname + '/client'));
 
 //LISTEN UP HERE"S A STORY 
-serv.listen(process.env.PORT || 2000);
+serv.listen(80 || 2000);
 console.log("Server started succesfully.");
 
 //Stores all the connected sockets (or web thingies, you know what i mean)
@@ -24,7 +24,7 @@ var Player = function(id){
 	var self = {
 		id:"",
 		health: 100,
-		spd: 1,
+		spd: 0.5,
 	}
 
 	self.id = id;
@@ -47,6 +47,22 @@ Player.onConnect = function(socket){
 //When a player disconnects, delete the player from the players list
 Player.onDisconnect = function(socket){
 	delete Player.list[socket.id];
+
+	console.log('A player has disconnected');
+	console.log(socket.id);
+
+	//Remove all the elements from the allElements array so no new tasks will be generated for that element and it can be created again
+	Player.cleanupArray(socket.id);
+}
+
+Player.cleanupArray = function(id){
+	//cycles through all the elements until it reaches one where the disconnected id matches with the element id, then it removes that and it start again until there isn't any left
+	for(var i = 0;i < allElements.length;i++){
+		if(allElements[i].playerId === id){
+			allElements.splice(i, 1);
+			Player.cleanupArray(id);
+		}
+	}
 }
 
 //Updates the healthbare
@@ -59,27 +75,27 @@ Player.updateHealth = function(id){
 		Task.fail(id);
 		Task(id);
 	}
-	return Player.list[id].health;
+	return Math.floor(Player.list[id].health);
 }
 
+var allElements = [];
+var elementStatus = [];
+
 Player.generateBoard = function(socket){
+	var nameOptions = ["Kwadraat<wbr>lek", "Systeem<wbr>bord", "Ontladings<wbr>schakelaar", "Javaanse <wbr>Wafel", "Birk", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18"];
+	var elementOptions = ["button", "toggleSwitch", "slider"];
+	var optionOptions = [3, 4, 6];
+
 	var boardData = [socket.id];
 
 	var newElementType;
 	var newOptionCount;
+	var newDisplayName;
 	for(i=1;i<10;i++){
 
+		newDisplayName = Player.generateDisplayName();
 		//Determines which type it is going to use
-		switch(Math.floor(3 * Math.random())){
-			case 0:
-				newElementType = "button"; break;
-			case 1:
-				newElementType = "toggleSwitch"; break;
-			case 2:
-				newElementType = "slider"; break;
-			default:
-				newElementType = "button";
-		}
+		newElementType = elementOptions[Math.floor(3 * Math.random())];
 
 		//Select the option count
 		if(newElementType === "button"){
@@ -87,29 +103,54 @@ Player.generateBoard = function(socket){
 		}else if(newElementType === "toggleSwitch"){
 			newOptionCount = 2;
 		}else if(newElementType === "slider"){
-			switch(Math.floor(3 * Math.random())){
-				case 0:
-					newOptionCount = 3; break;
-				case 1:
-					newOptionCount = 4; break;
-				case 2:
-					newOptionCount = 6; break;
-				default:
-					newOptionCount = 4;
-			}
+			newOptionCount = optionOptions[Math.floor(3 * Math.random())];
 		}
 
 		var elementData = {
-			displayName: "Lorem Ipsum",
+			playerId: socket.id,
+			displayName: newDisplayName,
 			elementType: newElementType,
-			optionCount: newOptionCount
+			optionCount: newOptionCount,
+		}
+
+		var statusData = {
+			displayName: newDisplayName,
+			optionCount: newOptionCount,
+			currentOption: 0, 
 		}
 
 		boardData[i] = elementData;
+		allElements.push(elementData);
+		elementStatus.push(statusData);
+
+	}
+	//console.log(allElements);
+	socket.emit('newBoard', boardData);
+}
+
+Player.generateDisplayName = function(){
+
+	var nameOptions = ["Kwadraat<wbr>lek", "Systeem<wbr>bord", "Ontladings<wbr>schakelaar", "Javaanse <wbr>Wafel", "Birk", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18"];
+	var newDisplayName;
+
+	while(true){
+
+		var isDuplicate = false;
+		newDisplayName = nameOptions[Math.floor(nameOptions.length * Math.random())];
+
+		for(var j = 0;j < allElements.length;j++){
+			if(newDisplayName === allElements[j].displayName){
+				isDuplicate = true;
+				break;
+			}
+		}
+
+		if(!isDuplicate){
+			return newDisplayName;
+		}
 
 	}
 
-	socket.emit('newBoard', boardData);
 }
 
 
@@ -128,47 +169,41 @@ var Task = function(id){
 Task.generate = function(id){
 	var self = {
 		playerId: "",
-		displayName: "",
+		displayMessage: "",
 		type: "",
-		options: "",
+		option: "",
+	}
+
+	var rNumber = Math.floor(allElements.length * Math.random());
+	randomElement = allElements[rNumber];
+
+	var type = randomElement.elementType;
+	var option = randomElement.optionCount;
+	var displayName = randomElement.displayName;
+	var message;
+
+	statusData = elementStatus[rNumber];
+
+	if(type === "button"){
+		message = "Druk op de " + displayName + " knop";
+	}else if(type === "toggleSwitch"){
+		if(statusData.currentOption === 0){
+			message = "Zet " + displayName + " aan";
+		}else if(statusData.currentOption === 1){
+			message = "Zet " + displayName + " uit";
+		}
+	}else if(type === "slider"){
+		message = "Zet " + displayName + " to " + generateRandomNumberWithException(statusData.optionCount, statusData.currentOption);
+	}
+
+	var self = {
+		playerId: id,
+		displayMessage: message,
+		type: type,
+		option: option,
 	}
 
 	Task.list[id] = self;
-	var newDisplayName;
-	switch(Math.floor(6 * Math.random())){
-		case 0:
-			newDisplayName = "HOI DIT IS EEN TASK 0";
-			break;
-		case 1:
-			newDisplayName = "HOI DIT IS EEN TASK 1";
-			break;
-		case 2:
-			newDisplayName = "HOI DIT IS EEN TASK 2";
-			break;
-		case 3:
-			newDisplayName = "HOI DIT IS EEN TASK 3";
-			break;
-		case 4:
-			newDisplayName = "HOI DIT IS EEN TASK 4";
-			break;
-		case 5:
-			newDisplayName = "HOI DIT IS EEN TASK 5";
-			break;
-		case 6:
-			newDisplayName = "HOI DIT IS EEN TASK 6";
-			break;
-	}
-
-	//If the new task is the same as the old one, try again (doesn't work yet)
-	if(Task.list[id] != null && newDisplayName == Task.list[id].displayName){
-		Task.generate(id);
-	}else if(newDisplayName != Task.list[id].displayName){
-		Task.list[id].displayName = newDisplayName;
-	}
-
-	self.playerId = id;
-	self.type = "switch";
-	self.options = "2";
 
 	return self;
 }
@@ -178,7 +213,7 @@ Task.list = {};
 //When the health reaches 0 or below, execute this
 Task.fail = function(id){
 	delete Task.list[id];
-	console.log("Failed task for ID " + id);
+	//console.log("Failed task for ID " + id);
 }
 
 
@@ -224,3 +259,12 @@ setInterval(function(){
 		socket.emit('newPlayerData', pack);
 	}*/
 },1000/25);
+
+function generateRandomNumberWithException(max, exception){
+	var rNumber = Math.floor(max * Math.random());
+	if(rNumber === exception){
+		generateRandomNumberWithException(max, exception);
+	}else{
+		return rNumber;
+	}
+}

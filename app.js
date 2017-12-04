@@ -11,7 +11,7 @@ app.get('/',function(req, res) {
 app.use('/client',express.static(__dirname + '/client'));
 
 //LISTEN UP HERE"S A STORY 
-serv.listen(80 || 2000);
+serv.listen(2000);
 console.log("Server started succesfully.");
 
 //Stores all the connected sockets (or web thingies, you know what i mean)

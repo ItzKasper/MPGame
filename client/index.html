@@ -79,7 +79,7 @@
 							inputMarkers = inputMarkers + "<td>" + j + "</td>";
 						}
 					}
-					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><input type="range" min="0" max="' + (data[i].optionCount - 1) + '" value="0" step="1" onInput=\'switchChange("' + data[i].id + '",this.value);\'/><table class="markers"><tr>' + inputMarkers + '</tr></table></div>';
+					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><input type="range" min="0" max="' + (data[i].optionCount - 1) + '" value="0" step="1" onmouseup=\'switchChange("' + data[i].id + '",this.value);\'/><table class="markers"><tr>' + inputMarkers + '</tr></table></div>';
 				}
 			}
 		});
@@ -104,13 +104,12 @@
 		document.getElementById("task").innerHTML = newTask;
 	}
 
-	function switchChange(switchId, newOption){
+	function switchChange(id, option){
 		var self = {
-			id: switchId,
-			option: newOption,
+			switchId: id,
+			newOption: option,
 		}
-		console.log("Switch " + switchId + " changed to " + newOption);
-		socket.emit('switchChange', self);
+		socket.emit('newSliderOption', self);
 	}
 
 	function toggleSwitchPress(switchId, functionCaller){
@@ -129,7 +128,7 @@
 
 	function buttonPress(switchId){
 		console.log("Buttonpress");
-		socket.once('buttonPress', switchId);
+		socket.emit('buttonPress', switchId);
 	}
 </script>
 

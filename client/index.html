@@ -69,9 +69,9 @@
 				console.log(data[i]);
 				console.log(data[i].optionCount);
 				if(data[i].elementType === "toggleSwitch"){
-					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><img src="/client/img/toggleSwitchOff.png" class="img-responsive toggleSwitchImg" onclick=\'toggleSwitchPress("' + data[i].id + '", this.id);\' ontouchup=\'toggleSwitchPress("' + data[i].id + '", this.id);\' id="toggleSwitch' + data[i].id + 'Img"/></div>';
+					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><img src="/client/img/toggleSwitchOff.png" class="img-responsive toggleSwitchImg" onclick=\'toggleSwitchPress("' + data[i].id + '", this.id);\' ontouchend=\'toggleSwitchPress("' + data[i].id + '", this.id);\' id="toggleSwitch' + data[i].id + 'Img"/></div>';
 				}else if(data[i].elementType === "button"){
-					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><img src="/client/img/button.png" class="img-responsive buttonImg" onclick=\'buttonPress("' + data[i].id + '");\' ontouchup=\'buttonPress("' + data[i].id + '");\'></div>';
+					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><img src="/client/img/button.png" class="img-responsive buttonImg" onclick=\'buttonPress("' + data[i].id + '");\' ontouchend=\'buttonPress("' + data[i].id + '");\'></div>';
 				}else if(data[i].elementType === "slider"){
 					var inputMarkers = null;
 					for(var j = 0;j < data[i].optionCount;j++){
@@ -81,7 +81,7 @@
 							inputMarkers = inputMarkers + "<td>" + j + "</td>";
 						}
 					}
-					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><input type="range" min="0" max="' + (data[i].optionCount - 1) + '" value="0" step="1" onmouseup=\'switchChange("' + data[i].id + '",this.value);\' ontouchup=\'switchChange("' + data[i].id + '",this.value);\'/><table class="markers"><tr>' + inputMarkers + '</tr></table></div>';
+					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><input type="range" min="0" max="' + (data[i].optionCount - 1) + '" value="0" step="1" onmouseup=\'switchChange("' + data[i].id + '",this.value);\' ontouchend=\'switchChange("' + data[i].id + '",this.value);\'/><table class="markers"><tr>' + inputMarkers + '</tr></table></div>';
 				}
 			}
 		});

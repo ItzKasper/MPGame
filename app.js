@@ -16,29 +16,42 @@ console.log("Server started succesfully.");
 
 //Stores all the connected sockets (or web thingies, you know what i mean)
 var SOCKET_LIST = {};
+var totalCompleted = 0;
+var totalFailed = 0;
 
 /* PLAYER PLAYER PLAYER PLAYER */
 
 //Sets defaults for the player
-var Player = function(id){
+var Player = function(id, spd){
 	var self = {
-		id:"",
+		id: "",
 		health: 100,
 		spd: 1,
 	}
 
 	self.id = id;
+	self.spd = spd;
 
 	Player.list[id] = self;
+	console.log(Player.list);
 	return self;
 }
 
 //When a player connects
-Player.list = [];
+Player.list = {};
 Player.onConnect = function(socket){
 	//Create a player with the socket id
-	var player = Player(socket.id);
+	var player = Player(socket.id, 1);
 	console.log("A Player With Id: " + socket.id + " Has Connected");
+	//console.log(Player.list.length);
+
+	//Adjust the speed of the healthbar on the amount of online players
+	var onlinePlayers = getOnlinePlayers();
+
+	for(var i in Player.list){
+		Player.list[i].spd = 1 - (onlinePlayers * 0.115);
+		Player.list[i].spd;
+	}
 
 	Player.generateBoard(socket);
 	Task(socket.id);
@@ -46,13 +59,25 @@ Player.onConnect = function(socket){
 
 //When a player disconnects, delete the player from the players list
 Player.onDisconnect = function(socket){
-	delete Player.list[socket.id]; //Can be deleted??
+	delete Player.list[socket.id]; 
 
 	console.log('A player has disconnected');
 	console.log(socket.id);
 
+	if(getOnlinePlayers() === 0){
+		totalCompleted = 0;
+		totalFailed = 0;
+	}
+
+	//Adjust the speed of the healthbar on the amount of online players
+	var onlinePlayers = getOnlinePlayers();
+
+	for(var i in Player.list){
+		Player.list[i].spd = 1 - (onlinePlayers * 0.115);
+		Player.list[i].spd;
+	}
+
 	//Remove all the elements from the allElements array so no new tasks will be generated for that element and it can be created again
-	Player.cleanupArray(socket.id, allElements);
 	Player.cleanupArray(socket.id, elementStatus);
 	Player.cleanupArray(socket.id, taskList);
 }
@@ -76,9 +101,9 @@ Player.updateHealth = function(id){
 	else if(Player.list[id].health <= 0){
 		for(var i = 0;i<taskList.length;i++){
 			if(taskList[i].playerId === id){
-				for(var j = 0; j < allElements.length; j++){
-					if(allElements[j].playerId === id){
-						allElements[j].oldOption = elementStatus[j].currentOption;
+				for(var j = 0; j < elementStatus.length; j++){
+					if(elementStatus[j].playerId === id){
+						elementStatus[j].oldOption = elementStatus[j].currentOption;
 					}
 				}
 				Task.fail(i);
@@ -92,7 +117,6 @@ Player.updateHealth = function(id){
 	return Math.floor(Player.list[id].health);
 }
 
-var allElements = [];
 var elementStatus = [];
 
 Player.generateBoard = function(socket){
@@ -108,11 +132,20 @@ Player.generateBoard = function(socket){
 	var newDisplayName;
 	for(i=1;i<10;i++){
 
-		newName = Player.generateDisplayName();
+		newName = Player.generateDisplayName(socket);
 		newDisplayName = newName.displayName;
 		newId = newName.id;
 		//Determines which type it is going to use
-		newElementType = elementOptions[Math.floor(3 * Math.random())];
+		rNumber = Math.floor(100 * Math.random());
+		if(rNumber >= 0 && rNumber < 35){
+			newElementType = elementOptions[0];
+		}else if(rNumber >= 40 && rNumber < 70){
+			newElementType = elementOptions[1];
+		}else if(rNumber >= 70 && rNumber <= 100){
+			newElementType = elementOptions[2];
+		}else{
+			newElementType = elementOptions[0];
+		}
 
 		//Select the option count
 		if(newElementType === "button"){
@@ -129,23 +162,14 @@ Player.generateBoard = function(socket){
 			id: newId,
 			elementType: newElementType,
 			optionCount: newOptionCount,
-		}
-
-		var statusData = {
-			playerId: socket.id,
-			displayName: newDisplayName,
-			id: newId,
-			optionCount: newOptionCount,
 			currentOption: 0, 
 			oldOption: 0,
 		}
 
 		boardData[i] = elementData;
-		allElements.push(elementData);
-		elementStatus.push(statusData);
+		elementStatus.push(elementData);
 
 	}
-	//console.log(allElements);
 	socket.emit('newBoard', boardData);
 
 	socket.on('newToggleSwitchOption', function(switchId){
@@ -179,7 +203,7 @@ Player.generateBoard = function(socket){
 
 }
 
-Player.generateDisplayName = function(){
+Player.generateDisplayName = function(socket){
 
 	var nameOptions = [
 	{displayName: "Kwadraat<wbr>lek", id: "kwadraatlek"},
@@ -189,24 +213,60 @@ Player.generateDisplayName = function(){
 	{displayName: "Birk", id: "birk"},
 	{displayName: "Kalibrator", id: "kalibrator"},
 	{displayName: "Mogge", id: "mogge"},
-	{displayName: "Boermsa", id: "boersma"},
+	{displayName: "Boersma", id: "boersma"},
 	{displayName: "Bril", id: "bril"},
 	{displayName: "Banaan", id: "banaan"},
 	{displayName: "Capacitor", id: "capacitor"},
 	{displayName: "Geleiding", id: "geleiding"},
 	{displayName: "Airco", id: "airco"},
-	{displayName: "9", id: "9"},
-	{displayName: "10", id: "10"},
-	{displayName: "11", id: "11"},
-	{displayName: "12", id: "12"},
-	{displayName: "13", id: "13"},
-	{displayName: "14", id: "14"},
-	{displayName: "15", id: "15"},
-	{displayName: "16", id: "16"},
-	{displayName: "17", id: "17"},
-	{displayName: "18", id: "18"},
+	{displayName: "Geluids<wbr>versneller", id: "geluidsversneller"},
+	{displayName: "Sonisch <wbr>Schild", id: "sonisch_schild"},
+	{displayName: "Holo<wbr>spectrum", id: "holospectrum"},
+	{displayName: "Fiets<wbr>lampje", id: "fietslampje"},
+	{displayName: "Spectrum<wbr>moer", id: "spectrummoer"},
+	{displayName: "Strijk<wbr>machine", id: "strijkmachine"},
+	{displayName: "Smoor<wbr>klep", id: "smoorklep"},
+	{displayName: "Infrarood", id: "infrarood"},
+	{displayName: "Ultra<wbr>violet", id: "ultraviolet"},
+	{displayName: "Uitlaat", id: "uitlaat"},
+	{displayName: "Landings<wbr>gestel", id: "landingsgestel"},
+	{displayName: "Remmen", id: "remmen"},
+	{displayName: "Raketten", id: "raketten"},
+	{displayName: "SAS", id: "sas"},
+	{displayName: "RCS", id: "rcs"},
+	{displayName: "Golfvorm", id: "golfvorm"},
+	{displayName: "COMMs", id: "comms"},
+	{displayName: "VUUR!", id: "vuur"},
+	{displayName: "Ongeloof", id: "Ongeloof"},
+	{displayName: "Uien", id: "Uien"},
+	{displayName: "Toeter", id: "toeter"},
+	{displayName: "Bamboozle", id: "bamboozle"},
+	{displayName: "Scanner", id: "scanner"},
+	{displayName: "Super<wbr>druk", id: "superdruk"},
+	{displayName: "Frustratie", id: "frustratie"},
+	{displayName: "Dijkstra", id: "dijkstra"},
+	{displayName: "Fusering", id: "fusering"},
+	{displayName: "Fusie", id: "fusie"},
+	{displayName: "Internet", id: "internet"},
+	{displayName: "ME_IRL", id: "me_irl"},
+	{displayName: "Stoffer", id: "stoffer"},
+	{displayName: "Plannen", id: "plannen"},
+	{displayName: "Vis.", id: "vis"},
+	{displayName: "Allergiën", id: "allergien"},
+	{displayName: "Fluit", id: "fluit"},
+	{displayName: "Burninator", id: "burninator"},
+	{displayName: "Prisma", id: "primsa"},
+	{displayName: "MAND", id: "mand"},
+	{displayName: "Module", id: "module"},
+	{displayName: "Versneller", id: "versneller"},
 	];
 	var newDisplayName;
+
+	var n = 0;
+	while(getOnlinePlayers() * 9 > nameOptions.length){
+		nameOptions.push({displayName: n, id: n});
+		n++;
+	}
 
 	while(true){
 
@@ -215,8 +275,8 @@ Player.generateDisplayName = function(){
 		newDisplayName = newNameOption.displayName;
 		newId = newNameOption.id;
 
-		for(var j = 0;j < allElements.length;j++){
-			if(newDisplayName === allElements[j].displayName){
+		for(var j = 0;j < elementStatus.length;j++){
+			if(newDisplayName === elementStatus[j].displayName){
 				isDuplicate = true;
 				break;
 			}
@@ -250,10 +310,10 @@ var Task = function(id){
 }
 
 Task.generate = function(id){
-	Player(id).health = 100;
+	Player.list[id].health = 100;
 
-	var rNumber = Math.floor(allElements.length * Math.random());
-	randomElement = allElements[rNumber];
+	var rNumber = Math.floor(elementStatus.length * Math.random());
+	randomElement = elementStatus[rNumber];
 
 	var type = randomElement.elementType;
 	var option;
@@ -263,7 +323,7 @@ Task.generate = function(id){
 
 	if(type === "button"){
 		option = 1;
-		message = "Druk op de " + displayName + " knop";
+		message = "Druk op " + displayName;
 	}else if(type === "toggleSwitch"){
 		if(getCurrentOption(switchId) === 1){
 			option = 0;
@@ -274,7 +334,7 @@ Task.generate = function(id){
 		}
 	}else if(type === "slider"){
 		option = generateRandomNumberWithException(randomElement.optionCount, randomElement.oldOption);
-		message = "Zet " + displayName + " to " + option;
+		message = "Zet " + displayName + " op " + option;
 	}
 
 	var self = {
@@ -286,27 +346,20 @@ Task.generate = function(id){
 	}
 
 	taskList.push(self);
-	console.log("LENGTH" + Player.list.length);
 	for(var i = 0;i<Player.list.length;i++){
 		if(Player.list[i] === id){
 			Player.list[i].health = 100;
 		}
 	}
+
 	return self;
 }
 
 taskList = [];
 
 Task.check = function(switchId, currentOption){
-	console.log("Checking task");
-	console.log(switchId);
 	for(var j = 0;j<taskList.length;j++){
-		console.log(taskList[j].id === switchId);
-		console.log(taskList[j].option == currentOption);
-		console.log(taskList[j].option);
-		console.log(currentOption);
 		if(taskList[j].id === switchId && taskList[j].option == currentOption){
-			console.log("COMPLETE ");
 			Task.complete(j, taskList[j].playerId, currentOption);
 		}
 	}
@@ -314,20 +367,21 @@ Task.check = function(switchId, currentOption){
 
 Task.complete = function(arrayId, playerId, oldOption){
 	taskList.splice(arrayId, 1);
-	for(var i = 0;i<allElements.length;i++){
-		if(allElements[i].playerId === playerId){
-			allElements[i].oldOption = oldOption;
+	for(var i = 0;i<elementStatus.length;i++){
+		if(elementStatus[i].playerId === playerId){
+			elementStatus[i].oldOption = oldOption;
 		}
 	}
 	newTask = Task.generate(playerId);
 	var socket = SOCKET_LIST[playerId];
 	socket.emit('newTask', newTask);
+	totalCompleted+=1;
 }
 
 //When the health reaches 0 or below, execute this
 Task.fail = function(arrayId){
 	taskList.splice(arrayId, 1);
-	//console.log("Failed task for ID " + id);
+	totalFailed+=1;
 }
 
 
@@ -362,7 +416,9 @@ setInterval(function(){
 		//console.log(socket.id);
 		/*console.log(Player(socket.id).health);*/
 		var pack = {
-			health:Player.updateHealth(socket.id)
+			health:Player.updateHealth(socket.id),
+			totalCompleted: totalCompleted,
+			totalFailed: totalFailed,
 		}
 		socket.emit('newPlayerData', pack);
 	}
@@ -377,7 +433,6 @@ setInterval(function(){
 	}*/
 },1000/25);
 
-//Temporary because it keeps getting stuck in an infinite loop
 function generateRandomNumberWithException(max, exception){
 	var isDuplicate = true;
 	while(true){
@@ -397,4 +452,8 @@ function getCurrentOption(switchId){
 				return elementStatus[i].currentOption;
 			}
 		}
+}
+
+function getOnlinePlayers(){
+	return Object.keys(Player.list).length;
 }

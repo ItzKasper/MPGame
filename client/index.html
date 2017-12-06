@@ -13,6 +13,7 @@
 <div class="row">
 	<!--Maybe for a timer or something -->
 	<div class="col-sm-1">
+		<h1 id="totalCompleted">0</h1>
 	</div>
 
 	<div class="col-sm-10">
@@ -23,6 +24,7 @@
 	</div>
 
 	<div class="col-sm-1">
+		<h1 id="totalFailed">0</h1>
 	</div>
 </div>
 
@@ -67,9 +69,9 @@
 				console.log(data[i]);
 				console.log(data[i].optionCount);
 				if(data[i].elementType === "toggleSwitch"){
-					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><img src="/client/img/toggleSwitchOff.png" class="img-responsive toggleSwitchImg" onclick=\'toggleSwitchPress("' + data[i].id + '", this.id);\' id="toggleSwitch' + data[i].id + 'Img"/></div>';
+					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><img src="/client/img/toggleSwitchOff.png" class="img-responsive toggleSwitchImg" onclick=\'toggleSwitchPress("' + data[i].id + '", this.id);\' ontouchup=\'toggleSwitchPress("' + data[i].id + '", this.id);\' id="toggleSwitch' + data[i].id + 'Img"/></div>';
 				}else if(data[i].elementType === "button"){
-					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><img src="/client/img/button.png" class="img-responsive buttonImg" onclick=\'buttonPress("' + data[i].id + '");\'></div>';
+					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><img src="/client/img/button.png" class="img-responsive buttonImg" onclick=\'buttonPress("' + data[i].id + '");\' ontouchup=\'buttonPress("' + data[i].id + '");\'></div>';
 				}else if(data[i].elementType === "slider"){
 					var inputMarkers = null;
 					for(var j = 0;j < data[i].optionCount;j++){
@@ -79,7 +81,7 @@
 							inputMarkers = inputMarkers + "<td>" + j + "</td>";
 						}
 					}
-					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><input type="range" min="0" max="' + (data[i].optionCount - 1) + '" value="0" step="1" onmouseup=\'switchChange("' + data[i].id + '",this.value);\'/><table class="markers"><tr>' + inputMarkers + '</tr></table></div>';
+					document.getElementById("element" + i).innerHTML = '<div><p>' + data[i].displayName + '</p><input type="range" min="0" max="' + (data[i].optionCount - 1) + '" value="0" step="1" onmouseup=\'switchChange("' + data[i].id + '",this.value);\' ontouchup=\'switchChange("' + data[i].id + '",this.value);\'/><table class="markers"><tr>' + inputMarkers + '</tr></table></div>';
 				}
 			}
 		});
@@ -87,12 +89,30 @@
 </div>
 <script type="text/javascript">
 	socket.on('newPlayerData', function(data){
-		updateHealthBar(data.health);
+		updateHealthBar(data.health, data.totalCompleted, data.totalFailed);
 	});
 
-	function updateHealthBar(newHealth){
-		document.getElementById("healthBar").style.width= newHealth + "%";
-		document.getElementById("healthText").innerHTML = newHealth + "%";
+	function updateHealthBar(newHealth, totalCompleted, totalFailed){
+		//If the health is below zero, set the health to zero
+		if(newHealth < 0){
+			document.getElementById("healthBar").style.width= 0 + "%";
+			document.getElementById("healthText").innerHTML = 0 + "%";
+		}else{
+			document.getElementById("healthBar").style.width= newHealth + "%";
+			document.getElementById("healthText").innerHTML = newHealth + "%";
+		}
+
+		if(totalCompleted > 999){
+			document.getElementById("totalCompleted").innerHTML = "999+";
+		}else{
+			document.getElementById("totalCompleted").innerHTML = totalCompleted;
+		}
+
+		if(totalFailed > 999){
+			document.getElementById("totalFailed").innerHTML = "999+";
+		}else{
+			document.getElementById("totalFailed").innerHTML = totalFailed;
+		}
 	}
 
 
